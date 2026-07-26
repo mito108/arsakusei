@@ -15,17 +15,31 @@ let birdGroup;
 // ========================================
 
 function init() {
-    setupThreeJS();
-    createScene();
-    setupEventListeners();
-    animate();
+    console.log('🚀 Initializing Three.js...');
+    
+    try {
+        setupThreeJS();
+        createScene();
+        setupEventListeners();
+        console.log('✅ Initialization complete');
+        animate();
+    } catch (error) {
+        console.error('❌ Initialization error:', error);
+        alert('エラーが発生しました。ブラウザを再読み込みしてください。');
+    }
 }
 
 function setupThreeJS() {
+    // Check if Three.js is loaded
+    if (typeof THREE === 'undefined') {
+        throw new Error('Three.js is not loaded. Check CDN link.');
+    }
+
     // Scene
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x000000);
     scene.fog = new THREE.Fog(0x000000, 80, 100);
+    console.log('✓ Scene created');
 
     // Camera - Perspective for depth perception
     const width = window.innerWidth;
@@ -38,19 +52,26 @@ function setupThreeJS() {
     );
     camera.position.z = CONFIG.CAMERA_Z;
     camera.lookAt(0, 0, -10);
+    console.log(`✓ Camera created (${width}x${height})`);
 
     // Renderer
     const canvas = document.getElementById('canvas');
+    if (!canvas) {
+        throw new Error('Canvas element not found. Check HTML.');
+    }
+
     renderer = new THREE.WebGLRenderer({
         canvas: canvas,
         antialias: true,
         alpha: true,
-        precision: 'highp'
+        precision: 'highp',
+        powerPreference: 'high-performance'
     });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFShadowShadowMap;
+    console.log(`✓ Renderer created (${window.devicePixelRatio}x pixel ratio)`);
 
     // Lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
@@ -62,6 +83,7 @@ function setupThreeJS() {
     directionalLight.shadow.mapSize.width = 2048;
     directionalLight.shadow.mapSize.height = 2048;
     scene.add(directionalLight);
+    console.log('✓ Lighting added');
 
     // Resize listener
     window.addEventListener('resize', onWindowResize);
@@ -71,15 +93,19 @@ function createScene() {
     // Bird container
     birdGroup = new THREE.Group();
     scene.add(birdGroup);
+    console.log('✓ Bird group created');
 
     // Create all birds
     createBirds();
+    console.log(`✓ ${birds.length} birds created`);
 }
 
 function createBirds() {
     const bgCount = CONFIG.BACKGROUND_COUNT;
     const mgCount = CONFIG.MIDGROUND_COUNT;
     const fgCount = CONFIG.FOREGROUND_COUNT;
+
+    console.log(`Creating birds: BG=${bgCount}, MG=${mgCount}, FG=${fgCount}`);
 
     // Background birds (distant)
     for (let i = 0; i < bgCount; i++) {
@@ -168,16 +194,13 @@ class Bird {
         const index = this.index;
 
         if (layer === 'BACKGROUND') {
-            // Background birds appear first and scattered
             const bgIndex = index;
             return CONFIG.FIRST_BIRD_TIME + bgIndex * 0.3 + Math.random() * 0.5;
         } else if (layer === 'MIDGROUND') {
-            // Midground birds build the main flock
             const bgCount = CONFIG.BACKGROUND_COUNT;
             const mgIndex = index - bgCount;
             return CONFIG.FLOCK_BUILD_START + mgIndex * 0.15 + Math.random() * 0.3;
         } else {
-            // Foreground birds appear last
             const bgCount = CONFIG.BACKGROUND_COUNT;
             const mgCount = CONFIG.MIDGROUND_COUNT;
             const fgIndex = index - bgCount - mgCount;
@@ -197,7 +220,6 @@ class Bird {
         this.updateRotation();
         this.updateWingAnimation(globalTime);
 
-        // Sync mesh position
         this.mesh.position.copy(this.position);
     }
 
@@ -230,7 +252,6 @@ class Bird {
             }
         } else if (this.state === 'GONE') {
             if (globalTime >= CONFIG.RETURN_START_TIME) {
-                // Reset for second sequence
                 this.state = 'RETURNING_SPAWN';
                 this.stateTime = 0;
                 this.position.z = CONFIG.DISTANT_Z;
@@ -262,7 +283,6 @@ class Bird {
 
     updateTargetPosition(globalTime) {
         if (this.state === 'SPAWNING') {
-            // Start from very far, slowly approach
             const progress = this.stateTime / 2.0;
             const startZ = CONFIG.DISTANT_Z - 5;
             this.targetPosition.z = THREE.MathUtils.lerp(startZ, this.zLayer, progress * 0.5);
@@ -270,14 +290,12 @@ class Bird {
             this.targetPosition.y = (Math.random() - 0.5) * 5;
         }
         else if (this.state === 'APPROACHING') {
-            // Approach the camera
             const relativeTime = (globalTime - CONFIG.FULL_FLOCK_TIME) / 2.0;
             this.targetPosition.z = THREE.MathUtils.lerp(this.zLayer, this.zLayer + 5, Math.min(relativeTime, 1.0));
             this.targetPosition.x += (Math.random() - 0.5) * 0.1;
             this.targetPosition.y += (Math.random() - 0.5) * 0.1;
         }
         else if (this.state === 'FLOCKING') {
-            // Orbit formation
             this.flockAngle += this.flockAngularVelocity * 0.016;
             const orbX = Math.cos(this.flockAngle) * CONFIG.FLOCK_RADIUS_X * (0.5 + Math.random() * 0.3);
             const orbY = Math.sin(this.flockAngle * 0.5) * CONFIG.FLOCK_RADIUS_Y + this.flockHeight;
@@ -287,16 +305,13 @@ class Bird {
             this.targetPosition.y = orbY + (Math.random() - 0.5) * 0.5;
             this.targetPosition.z = orbZ + (Math.random() - 0.5) * 0.5;
 
-            // Apply boids flocking
             this.applyFlocking();
         }
         else if (this.state === 'FLYING_OUT') {
-            // Fly away to negative Z
             const progress = (globalTime - CONFIG.FIRST_FLY_OUT_TIME) / (CONFIG.FIRST_FLY_OUT_END - CONFIG.FIRST_FLY_OUT_TIME);
             this.targetPosition.z = THREE.MathUtils.lerp(this.position.z, CONFIG.DISTANT_Z - 5, progress);
         }
         else if (this.state === 'RETURNING_SPAWN') {
-            // Reappear from far away
             const progress = this.stateTime / 2.0;
             const startZ = CONFIG.DISTANT_Z - 5;
             this.targetPosition.z = THREE.MathUtils.lerp(startZ, this.zLayer, progress * 0.5);
@@ -308,7 +323,6 @@ class Bird {
             this.targetPosition.z = THREE.MathUtils.lerp(this.zLayer, this.zLayer + 3, Math.min(relativeTime, 1.0));
         }
         else if (this.state === 'SECOND_FLOCKING') {
-            // Second orbital phase
             this.flockAngle += this.flockAngularVelocity * 0.016 * 0.8;
             const orbX = Math.cos(this.flockAngle * 0.7) * CONFIG.FLOCK_RADIUS_X * 1.2;
             const orbY = Math.sin(this.flockAngle * 0.3) * CONFIG.FLOCK_RADIUS_Y * 1.5 + this.flockHeight;
@@ -321,14 +335,12 @@ class Bird {
             this.applyFlocking();
         }
         else if (this.state === 'FINAL_RETURN') {
-            // Return to distance
             const progress = (globalTime - CONFIG.FINAL_RETURN_TIME) / (CONFIG.FINAL_DISAPPEAR_TIME - CONFIG.FINAL_RETURN_TIME);
             this.targetPosition.z = THREE.MathUtils.lerp(this.position.z, CONFIG.DISTANT_Z - 5, progress);
         }
     }
 
     applyFlocking() {
-        // Simplified boids algorithm
         const nearby = [];
         for (let other of birds) {
             if (other === this || other.state !== this.state) continue;
@@ -347,19 +359,16 @@ class Bird {
         for (let other of nearby) {
             const dist = this.position.distanceTo(other.position);
 
-            // Separation
             if (dist < CONFIG.SEPARATION_DISTANCE) {
                 const diff = new THREE.Vector3().subVectors(this.position, other.position);
                 diff.normalize();
                 separation.add(diff);
             }
 
-            // Alignment & Cohesion
             alignment.add(other.velocity);
             cohesion.add(other.position);
         }
 
-        // Apply forces
         if (separation.length() > 0) {
             separation.normalize().multiplyScalar(CONFIG.SEPARATION_STRENGTH);
             this.targetPosition.add(separation.multiplyScalar(0.01));
@@ -388,23 +397,19 @@ class Bird {
             this.velocity.lerp(direction.multiplyScalar(moveSpeed * 30), 0.15);
         }
 
-        // Apply velocity
-        this.velocity.multiplyScalar(0.95); // Damping
+        this.velocity.multiplyScalar(0.95);
         this.position.add(this.velocity.clone().multiplyScalar(deltaTime));
     }
 
     updateRotation() {
         if (this.velocity.length() > 0.1) {
-            // Face direction of movement
             const direction = this.velocity.clone().normalize();
             const angle = Math.atan2(direction.x, direction.z);
             this.mesh.rotation.y = angle;
 
-            // Pitch based on vertical movement
             const pitchAngle = Math.atan2(direction.y, new THREE.Vector2(direction.x, direction.z).length());
             this.mesh.rotation.x = pitchAngle * 0.2;
 
-            // Roll based on horizontal movement
             const rollStrength = Math.abs(direction.x) * 0.3;
             this.mesh.rotation.z = (direction.x > 0 ? 1 : -1) * rollStrength;
         }
@@ -426,7 +431,6 @@ class Bird {
 function createBirdMesh(scale) {
     const group = new THREE.Group();
 
-    // Body
     const bodyGeom = new THREE.CapsuleGeometry(0.12 * scale, 0.6 * scale, 4, 8);
     const bodyMat = new THREE.MeshStandardMaterial({
         color: 0xffffff,
@@ -439,7 +443,6 @@ function createBirdMesh(scale) {
     body.castShadow = true;
     group.add(body);
 
-    // Left Wing
     const wingGeom = createWingGeometry(scale);
     const wingMat = new THREE.MeshStandardMaterial({
         color: 0xffffff,
@@ -456,14 +459,12 @@ function createBirdMesh(scale) {
     leftWing.castShadow = true;
     group.add(leftWing);
 
-    // Right Wing
     const rightWing = leftWing.clone();
     rightWing.position.set(0.15 * scale, 0, 0);
     rightWing.scale.x = -1;
     rightWing.name = 'rightWing';
     group.add(rightWing);
 
-    // Beak
     const beakGeom = new THREE.ConeGeometry(0.06 * scale, 0.3 * scale, 8);
     const beakMat = new THREE.MeshStandardMaterial({
         color: 0xffd700,
@@ -476,7 +477,6 @@ function createBirdMesh(scale) {
     beak.castShadow = true;
     group.add(beak);
 
-    // Eyes
     const eyeGeom = new THREE.SphereGeometry(0.035 * scale, 8, 8);
     const eyeMat = new THREE.MeshStandardMaterial({
         color: 0x000000,
@@ -568,21 +568,17 @@ class Feather {
     update(deltaTime) {
         this.time += deltaTime;
 
-        // Apply wind/drift
         const windX = Math.sin(this.time * 0.5) * 0.3;
         const windZ = Math.cos(this.time * 0.7) * 0.3;
         this.velocity.x += windX * deltaTime * 0.5;
         this.velocity.z += windZ * deltaTime * 0.5;
-        this.velocity.y *= 0.98; // Damping
+        this.velocity.y *= 0.98;
 
-        // Move
         this.position.add(this.velocity.clone().multiplyScalar(deltaTime * 2));
 
-        // Rotate
         this.rotation.add(this.rotationVelocity.clone().multiplyScalar(deltaTime));
         this.mesh.rotation.set(this.rotation.x, this.rotation.y, this.rotation.z);
 
-        // Fade out
         const fadeStart = this.lifespan * 0.7;
         if (this.time > fadeStart) {
             const fadeProgress = (this.time - fadeStart) / (this.lifespan - fadeStart);
@@ -622,26 +618,65 @@ function createFeatherGeometry() {
 }
 
 // ========================================
-// Event Listeners
+// Event Listeners - CRITICAL FIX
 // ========================================
 
 function setupEventListeners() {
+    console.log('🔌 Setting up event listeners...');
+    
     const startBtn = document.getElementById('start-button');
-    startBtn.addEventListener('click', startAnimation);
+    
+    if (!startBtn) {
+        console.error('❌ Button not found! Check HTML element ID.');
+        return;
+    }
+    
+    console.log('✓ Button found:', startBtn);
+    
+    // Remove any existing listeners to prevent duplicates
+    startBtn.onclick = null;
+    startBtn.removeEventListener('click', startAnimation);
+    
+    // Add new listener with error handling
+    startBtn.addEventListener('click', function(e) {
+        console.log('🎬 Button clicked!');
+        e.preventDefault();
+        e.stopPropagation();
+        startAnimation();
+    });
+    
+    // Fallback for touch events
+    startBtn.addEventListener('touchstart', function(e) {
+        console.log('👆 Touch detected!');
+        e.preventDefault();
+        e.stopPropagation();
+        startAnimation();
+    });
+    
+    console.log('✓ Event listeners attached');
+    
     window.addEventListener('resize', onWindowResize);
 }
 
 function startAnimation() {
+    console.log('▶️ Starting animation...');
+    
     isAnimationRunning = true;
     animationTime = 0;
 
-    // Hide UI
     const uiContainer = document.getElementById('ui-container');
-    uiContainer.classList.add('hidden');
+    if (uiContainer) {
+        uiContainer.classList.add('hidden');
+        console.log('✓ UI hidden');
+    }
 
-    // Disable button
     const startBtn = document.getElementById('start-button');
-    startBtn.disabled = true;
+    if (startBtn) {
+        startBtn.disabled = true;
+        console.log('✓ Button disabled');
+    }
+    
+    console.log('✅ Animation started!');
 }
 
 function onWindowResize() {
@@ -662,26 +697,24 @@ function onWindowResize() {
 function animate() {
     requestAnimationFrame(animate);
 
-    const deltaTime = 0.016; // 60fps target
+    const deltaTime = 0.016;
 
     if (isAnimationRunning) {
         animationTime += deltaTime;
 
-        // Update birds
         for (let bird of birds) {
             bird.update(deltaTime, animationTime);
         }
 
-        // Generate feathers when birds disappear
         if (
             animationTime >= CONFIG.FEATHER_START_TIME &&
             animationTime < CONFIG.FEATHER_START_TIME + 0.5 &&
             feathers.length === 0
         ) {
             createFeathers();
+            console.log('🪶 Feathers created');
         }
 
-        // Update feathers
         for (let i = feathers.length - 1; i >= 0; i--) {
             feathers[i].update(deltaTime);
             if (!feathers[i].isAlive()) {
@@ -690,18 +723,20 @@ function animate() {
             }
         }
 
-        // Loop animation
         if (animationTime > CONFIG.TOTAL_DURATION) {
+            console.log('🔄 Animation loop completed');
             isAnimationRunning = false;
             animationTime = 0;
 
-            // Reset UI
             const uiContainer = document.getElementById('ui-container');
-            uiContainer.classList.remove('hidden');
+            if (uiContainer) {
+                uiContainer.classList.remove('hidden');
+            }
             const startBtn = document.getElementById('start-button');
-            startBtn.disabled = false;
+            if (startBtn) {
+                startBtn.disabled = false;
+            }
 
-            // Reset all birds
             for (let bird of birds) {
                 bird.state = 'WAITING';
                 bird.stateTime = 0;
@@ -709,7 +744,6 @@ function animate() {
                 bird.velocity.set(0, 0, 0);
             }
 
-            // Clear feathers
             for (let feather of feathers) {
                 birdGroup.remove(feather.mesh);
             }
@@ -736,4 +770,9 @@ function createFeathers() {
 // Start
 // ========================================
 
-init();
+// Wait for DOM to be ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}
