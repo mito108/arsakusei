@@ -2,17 +2,23 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebAR Fantasy Bird Flock Animation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>幻想都市の鳥の群れ | Fantasy Birds</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="container"></div>
-    <div id="info">
-        <h1>白いファンタジー鳥の群れ</h1>
-        <p>スマートフォンをアート作品にかざしてください</p>
+    <div id="background-container">
+        <img id="background-image" src="assets/background.png" alt="Fantasy City" />
     </div>
+
+    <canvas id="canvas"></canvas>
+
+    <div id="ui-container">
+        <button id="start-button" class="start-btn">鳥たちを呼ぶ</button>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="config.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
