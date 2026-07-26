@@ -7,15 +7,105 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="background-container">
-        <img id="background-image" src="assets/background.png" alt="Fantasy City" />
+    <!-- Welcome Screen -->
+    <div class="welcome" id="welcome-screen">
+        <img class="welcome__image" id="welcome-image" src="assets/background.png" alt="Fantasy City" />
+        <div class="welcome__shade"></div>
+
+        <div class="brand">
+            <div class="brand__mark"></div>
+            <span>arsakusei</span>
+            <span class="brand__edition">v2.0</span>
+        </div>
+
+        <div class="welcome__content">
+            <p class="eyebrow">✨ インタラクティブアート</p>
+            <h1>幻想都市の<span>鳥の群れ</span></h1>
+            <p class="welcome__lead">遠い空から白い鳥たちが飛んできます。タップして体験を始めましょう。</p>
+        </div>
+
+        <div class="welcome__actions">
+            <button class="button button--primary" id="start-button" aria-label="鳥たちを呼ぶ">
+                <span class="button__camera"></span>鳥たちを呼ぶ
+            </button>
+            <button class="button button--ghost" id="demo-button" aria-label="デモを見る">
+                デモを見る
+            </button>
+            <p class="privacy-note">カメラを使用しません。背景画像のみを使用します。</p>
+        </div>
     </div>
 
-    <canvas id="canvas"></canvas>
-
-    <div id="ui-container">
-        <button id="start-button" class="start-btn">鳥たちを呼ぶ</button>
+    <!-- Demo/Experience World -->
+    <div class="demo-world" id="demo-world">
+        <div class="demo-frame">
+            <img id="demo-background" src="assets/background.png" alt="Fantasy City" />
+            <canvas id="canvas"></canvas>
+        </div>
     </div>
+
+    <!-- HUD (Head-Up Display) -->
+    <div class="hud" id="hud">
+        <div class="hud__top">
+            <div class="hud__brand">
+                <span>arsakusei</span>
+            </div>
+            <button class="icon-button" id="exit-button" aria-label="終了">
+                ✕
+            </button>
+        </div>
+
+        <div style="position: relative; align-self: center; justify-self: center;">
+            <div class="scan-guide" id="scan-guide">
+                <div class="scan-guide__corner scan-guide__corner--tl"></div>
+                <div class="scan-guide__corner scan-guide__corner--tr"></div>
+                <div class="scan-guide__corner scan-guide__corner--bl"></div>
+                <div class="scan-guide__corner scan-guide__corner--br"></div>
+                <div class="scan-guide__line"></div>
+            </div>
+        </div>
+
+        <div class="status-card" id="status-card">
+            <div class="status-card__dot"></div>
+            <div>
+                <strong>準備中</strong>
+                <span>遠方から鳥が飛んできます...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Panel -->
+    <dialog class="info-panel" id="info-panel">
+        <button class="info-panel__close" id="info-close">×</button>
+        <h2>操作ガイド</h2>
+        <ol>
+            <li>
+                <span>01</span>
+                <div>タップして鳥のアニメーションを開始</div>
+            </li>
+            <li>
+                <span>02</span>
+                <div>遠い空から白い鳥たちが飛んできます</div>
+            </li>
+            <li>
+                <span>03</span>
+                <div>群れが画面を横切り、再び奥へ飛び去ります</div>
+            </li>
+            <li>
+                <span>04</span>
+                <div>白い羽根が手前に漂います</div>
+            </li>
+        </ol>
+    </dialog>
+
+    <!-- Error Dialog -->
+    <dialog class="error-dialog" id="error-dialog">
+        <h2>エラーが発生しました</h2>
+        <p class="eyebrow">⚠️ 技術的な問題</p>
+        <p id="error-message">申し訳ございません。ページを再度読み込んでください。</p>
+        <div class="error-dialog__actions">
+            <button class="button button--primary" onclick="location.reload()">再読み込み</button>
+        </div>
+    </dialog>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="config.js"></script>
